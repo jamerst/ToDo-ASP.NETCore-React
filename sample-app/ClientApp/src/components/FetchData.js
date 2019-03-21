@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { generateHeader } from '../util.js';
 
 export class FetchData extends Component {
   static displayName = FetchData.name;
@@ -6,8 +7,9 @@ export class FetchData extends Component {
   constructor (props) {
     super(props);
     this.state = { forecasts: [], loading: true };
+    console.log(generateHeader());
 
-    fetch('api/SampleData/WeatherForecasts')
+    fetch('api/SampleData/WeatherForecasts', { headers: generateHeader() })
       .then(response => response.json())
       .then(data => {
         this.setState({ forecasts: data, loading: false });
