@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.Extensions.Configuration;
 
@@ -13,6 +14,13 @@ namespace sample_app.Services {
 
         public AuthService(IConfiguration configuration) {
             this.configuration = configuration;
+        }
+
+        public static int getCurrentUser(IHttpContextAccessor context) {
+            var stringId = context?.HttpContext?.User?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+            int.TryParse(stringId ?? "0", out int userId);
+
+            return userId;
         }
 
         public string hashPassword(string password, string salt, int iterations, int size) {
@@ -37,10 +45,10 @@ namespace sample_app.Services {
             var handler = new JwtSecurityTokenHandler();
             var descriptor = new SecurityTokenDescriptor {
                 Subject = new ClaimsIdentity(new Claim[] {
-                    new Claim(ClaimTypes.Name, id.ToString())
+                    new Claim(JwtRegisteredClaimNames.Jti, id.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddSeconds(Convert.ToInt32(configuration["JwtExpiry"])),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration["JwtSecretKey"])), SecurityAlgorithms.HmacSha256Signature)
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtSecretKey"])), SecurityAlgorithms.HmacSha256Signature)
             };
 
             var token = handler.CreateToken(descriptor);

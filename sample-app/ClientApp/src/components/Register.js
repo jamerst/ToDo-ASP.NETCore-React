@@ -1,10 +1,14 @@
 import React, { Component } from 'react';
+import { Alert } from 'reactstrap';
 
 export class Register extends Component {
   constructor(props) {
     super(props);
     
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleDismiss = this.handleDismiss.bind(this);
+
+    this.state = { alert: false, alertMessage: "" };
   }
   
   static displayName = Register.name;
@@ -18,24 +22,42 @@ export class Register extends Component {
             localStorage.setItem("token", JSON.stringify(jsonData["token"])); // store JWT token
             this.props.history.push("/");
         } else {
-            alert("Error: " + jsonData["errMsg"]);
+            this.setState({alert: true, alertMessage: jsonData["errMsg"]});
         }
     });  
+  }
+
+  handleDismiss() {
+    this.setState({ alert: false });
   }
   
   render () {
     return (
-      <form onSubmit={this.handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="email">Email address</label>
-          <input type="email" className="form-control" name="email" required />
-          <label htmlFor="password">Password</label>
-          <input type="password" className="form-control" name="password" required />
-          <label htmlFor="confirmPassword">Confirm Password</label>
-          <input type="password" className="form-control" name="confirmPassword" required />
+      <div className="container">
+        <div className="row">
+          <div className="jumbotron col-12 text-center">
+            <h1>Registration</h1>
+          </div>
         </div>
-        <button className="btn btn-primary" id="submit">Submit</button>
-      </form>
+      <div className="row justify-content-center">
+          <div className="card col col-8">
+            <div className="card-body">
+              <form onSubmit={this.handleSubmit}>
+                <div className="form-group">
+                  <label htmlFor="email">Email address</label>
+                  <input type="email" className="form-control" name="email" required />
+                  <label htmlFor="password">Password</label>
+                  <input type="password" className="form-control" name="password" required />
+                  <label htmlFor="confirmPassword">Confirm Password</label>
+                  <input type="password" className="form-control" name="confirmPassword" required />
+                </div>
+                <button className="btn btn-primary" id="submit">Submit</button>
+              </form>
+              <Alert color="danger" className="mt-3" isOpen={this.state.alert} toggle={this.handleDismiss}>{this.state.alertMessage}</Alert>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 }

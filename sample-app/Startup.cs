@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.Extensions.Configuration;
@@ -35,19 +36,24 @@ namespace sample_app
             // pass Configuration object to anything with an IConfiguration parameter
             services.AddSingleton<IConfiguration>(Configuration);
 
-            services.AddAuthentication(auth => {
-                auth.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                auth.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(auth => {
-                auth.RequireHttpsMetadata = false;
-                auth.SaveToken = true;
-                auth.TokenValidationParameters = new TokenValidationParameters {
+            // set up automatic authentication using JWT token
+            services.AddAuthentication(cfg => {
+                cfg.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                cfg.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(cfg => {
+                cfg.RequireHttpsMetadata = false;
+                cfg.SaveToken = true;
+                cfg.TokenValidationParameters = new TokenValidationParameters {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration["JwtSecretKey"])),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JwtSecretKey"])),
+                    ValidateLifetime = true,
                     ValidateIssuer = false,
                     ValidateAudience = false
                 };
             });
+
+            // pass object to controller to allow current user to be accessed
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
@@ -70,6 +76,7 @@ namespace sample_app
 
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
+            app.UseAuthentication();
 
             app.UseMvc(routes =>
             {
@@ -88,7 +95,6 @@ namespace sample_app
                 }
             });
 
-            app.UseAuthentication();
         }
     }
 }
