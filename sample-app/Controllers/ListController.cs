@@ -13,6 +13,7 @@ using System.Linq;
 
 namespace sample_app.Controllers {
     [Authorize]
+    [Route("/api/list/[action]")]
     public class ListController : Controller {
         private readonly int currentUser;
         private readonly ToDoContext _context;
@@ -37,6 +38,8 @@ namespace sample_app.Controllers {
         [HttpGet]
         public async Task<IActionResult> getLists() {
             User user = await _context.users.Include(u => u.lists).ThenInclude(l => l.items).FirstOrDefaultAsync(u => u.id == currentUser);
+            // Include and ThenInclude ensure that the child records in lists and items are also fetched
+            // equivalent SQL (can't be done in a single statement): SELECT * FROM users WHERE id = currentUser; SELECT * FROM lists WHERE userid = currentUser; SELECT * FROM items WHERE listid IN (SELECT id FROM lists WHERE userid = currentUser)
 
             if (user == default(User)) {
                 return Json(new listResponse { success = false, errMsg = "Invalid UID", code = 401 });
@@ -47,7 +50,7 @@ namespace sample_app.Controllers {
 
         [HttpPost]
         public async Task<IActionResult> createList(string listName) {
-            User user = await _context.users.Include(u => u.lists).FirstOrDefaultAsync(u => u.id == currentUser);
+            User user = await _context.users.Include(u => u.lists).FirstOrDefaultAsync(u => u.id == currentUser); // get user and all their lists
 
             if (user == default(User)) {
                 return Json(new jsonResponse { success = false, errMsg = "Invalid UID" });
@@ -56,10 +59,10 @@ namespace sample_app.Controllers {
             ToDoList newList = new ToDoList();
             newList.name = listName;
 
-            user.lists.Add(newList);
-
             try {
-                await _context.SaveChangesAsync();
+                user.lists.Add(newList);
+                // equivalent SQL: INSERT INTO lists VALUES (NULL,listName,currentUser);
+                _context.SaveChanges();
             } catch {
                 return Json(new jsonResponse {success = false, errMsg = "Failed to create new list"});
             }
@@ -93,7 +96,8 @@ namespace sample_app.Controllers {
 
             try {
                 list.items.Add(newItem);
-                await _context.SaveChangesAsync();
+                // equivalent SQL: INSERT INTO items VALUES(NULL,text,0,listId);
+                _context.SaveChanges();
             } catch {
                 return Json(new jsonResponse {success = false, errMsg = "Failed to create new list item"});
             }
@@ -124,7 +128,8 @@ namespace sample_app.Controllers {
 
             try {
                 item.complete = complete;
-                await _context.SaveChangesAsync();
+                // equivalent SQL: UPDATE items SET complete=1 WHERE id = itemId
+                _context.SaveChanges();
             } catch {
                 return Json(new jsonResponse { success = false, errMsg = "Failed to update item" });
             }
@@ -147,9 +152,8 @@ namespace sample_app.Controllers {
             }
 
             try {
-                _context.RemoveRange(list.items); // delete all list items first
-                _context.lists.Remove(list); // then remove list
-                await _context.SaveChangesAsync();
+                _context.Remove(list); // remove list - cascade delete removes items
+                _context.SaveChanges();
             } catch {
                 return Json(new jsonResponse { success = false, errMsg = "Failed to delete list" });
             }
@@ -181,7 +185,7 @@ namespace sample_app.Controllers {
 
             try {
                 _context.items.Remove(item);
-                await _context.SaveChangesAsync();
+                _context.SaveChanges();
             } catch {
                 return Json(new jsonResponse { success = false, errMsg = "Failed to delete item" });
             }

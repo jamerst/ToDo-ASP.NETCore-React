@@ -6,6 +6,7 @@ export class Home extends Component {
     constructor(props) {
         super(props);
         
+        // bind this to allow access in functions
         this.logout = this.logout.bind(this);
         this.handleAlertDismiss = this.handleAlertDismiss.bind(this);
         this.fetchLists = this.fetchLists.bind(this);
@@ -36,7 +37,7 @@ export class Home extends Component {
     }
 
     fetchLists() {
-        fetch("List/getLists", { headers: generateHeader() })
+        fetch("api/list/getLists", { headers: generateHeader() })
         .then(response => {
             // if access denied, redirect to login
             if (response.status === 401) {
@@ -57,7 +58,7 @@ export class Home extends Component {
         let data = new FormData();
         data.append("itemId", event.target.value);
         data.append("complete", event.target.checked);
-        fetch("List/updateItem", { method: "POST", headers: generateHeader(), body: data })
+        fetch("api/list/updateItem", { method: "POST", headers: generateHeader(), body: data }) // send POST request to change item state
             .then(response => response.json()).then(jsonData => {
                 if (jsonData["success"]) {
                     this.fetchLists(); // update state
@@ -72,7 +73,7 @@ export class Home extends Component {
         if (name != null) {
             let data = new FormData();
             data.append("listName", name);
-            fetch("List/createList", { method: "POST", headers: generateHeader(), body: data })
+            fetch("api/list/createList", { method: "POST", headers: generateHeader(), body: data }) // send POST request to create new list
                 .then(response => response.json()).then(jsonData => {
                     if (jsonData["success"] === true) {
                         this.fetchLists(); // update state
@@ -87,7 +88,7 @@ export class Home extends Component {
         if (window.confirm("Are you sure you want to delete this list?")) {
             let data = new FormData();
             data.append("listId", event.target.value);
-            fetch("List/deleteList", { method: "POST", headers: generateHeader(), body: data })
+            fetch("api/list/deleteList", { method: "POST", headers: generateHeader(), body: data }) // send POST request to delete list
                 .then(response => response.json()).then(jsonData => {
                     if (jsonData["success"] === true) {
                         this.fetchLists(); // update state
@@ -104,7 +105,7 @@ export class Home extends Component {
             let data = new FormData();
             data.append("listId", event.target.value);
             data.append("text", text);
-            fetch("List/createItem", { method: "POST", headers: generateHeader(), body: data })
+            fetch("api/list/createItem", { method: "POST", headers: generateHeader(), body: data }) // send POST request to add item
                 .then(response => response.json()).then(jsonData => {
                     if (jsonData["success"] === true) {
                         this.fetchLists(); // update state
@@ -119,7 +120,7 @@ export class Home extends Component {
         if (window.confirm("Are you sure you want to remove this item?")) {
             let data = new FormData();
             data.append("itemId", event.target.value);
-            fetch("List/deleteItem", { method: "POST", headers: generateHeader(), body: data })
+            fetch("api/list/deleteItem", { method: "POST", headers: generateHeader(), body: data }) // send POST request to delete item
                 .then(response => response.json()).then(jsonData => {
                     if (jsonData["success"] === true) {
                         this.fetchLists(); // update state

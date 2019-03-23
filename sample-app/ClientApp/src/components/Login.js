@@ -17,7 +17,7 @@ export class Login extends Component {
     event.preventDefault();
 
     // send form data and get response
-    fetch("Auth/login", { method: "POST", body: new FormData(event.target)}).then(response => response.json()).then(jsonData => {
+    fetch("api/auth/login", { method: "POST", body: new FormData(event.target)}).then(response => response.json()).then(jsonData => {
       // if logged in successfully
       if (jsonData["success"] === true) {
         localStorage.removeItem("token");

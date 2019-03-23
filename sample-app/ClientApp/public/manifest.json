@@ -1,6 +1,6 @@
 {
-  "short_name": "sample_app",
-  "name": "sample_app",
+  "short_name": "ToDo App",
+  "name": "ToDo App",
   "icons": [
     {
       "src": "favicon.ico",

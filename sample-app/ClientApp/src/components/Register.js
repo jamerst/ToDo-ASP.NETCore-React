@@ -16,7 +16,7 @@ export class Register extends Component {
     event.preventDefault();
 
     // send form data and get response
-    fetch("Auth/register", { method: "POST", body: new FormData(event.target)}).then(response => response.json()).then(jsonData => {
+    fetch("api/auth/register", { method: "POST", body: new FormData(event.target)}).then(response => response.json()).then(jsonData => {
         // if success, redirect to lists page
         if (jsonData["success"] === true) {
             localStorage.setItem("token", JSON.stringify(jsonData["token"])); // store JWT token

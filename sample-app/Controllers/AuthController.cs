@@ -8,14 +8,13 @@ using sample_app.Services;
 using Microsoft.Extensions.Configuration;
 
 namespace sample_app.Controllers {
+    [Route("/api/auth/[action]")]
     public class AuthController : Controller {
         private readonly ToDoContext _context;
-        private AuthService auth;
         private IConfiguration configuration;
 
         public AuthController(ToDoContext context, IConfiguration configuration) {
             _context = context;
-            auth = new AuthService(configuration);
             this.configuration = configuration;
         }
 
@@ -28,7 +27,8 @@ namespace sample_app.Controllers {
         [HttpPost]
         public async Task<IActionResult> login(string email, string password) {
             // get user with given email and password, return default value for User object if it doesn't exist
-            var user = await _context.users.FirstOrDefaultAsync(u => u.email == email && u.passwordHash == auth.hashPassword(password, u.passwordSalt, u.passHashIterations, u.passHashSize));
+            var user = await _context.users.FirstOrDefaultAsync(u => u.email == email && u.passwordHash == AuthService.hashPassword(password, u.passwordSalt, u.passHashIterations, u.passHashSize));
+            // equivalent SQL: SELECT * FROM users WHERE email = email AND passwordHash = hashedPassword LIMIT 1;
 
             if (user != default(User)) {
                 // if security config has changed, update salt, hash and security config for user record
@@ -37,13 +37,14 @@ namespace sample_app.Controllers {
                     user.passHashSize = Convert.ToInt32(configuration["passHashSize"]);
                     user.passSaltSize = Convert.ToInt32(configuration["passSaltSize"]);
 
-                    user.passwordSalt = auth.generateSalt(user.passSaltSize);
-                    user.passwordHash = auth.hashPassword(password, user.passwordSalt, user.passHashIterations, user.passHashSize);
+                    user.passwordSalt = AuthService.generateSalt(user.passSaltSize);
+                    user.passwordHash = AuthService.hashPassword(password, user.passwordSalt, user.passHashIterations, user.passHashSize);
+                    // equivalent SQL: UPDATE users SET passHashIterations = config[hashIterations], passHashSize = config[hashSize], passSaltSize = config[saltSize], passwordSalt = newSalt, passwordHash = newHash;
 
                     _context.SaveChanges();
                 }
 
-                var userToken = auth.generateJWT(user.id);
+                var userToken = AuthService.generateJWT(user, configuration["JwtSecretKey"], configuration["JwtExpiry"]); // generate a JWT token for authentication
                 return Json(new jsonResponse { success = true, token = userToken });
             } else {
                 return Json(new jsonResponse { success = false, errMsg = "Invalid username or password" });
@@ -52,6 +53,7 @@ namespace sample_app.Controllers {
 
         public async Task<IActionResult> register(string email, string password, string confirmPassword) {
             var user = await _context.users.FirstOrDefaultAsync(u => u.email == email);
+            // equivalent SQL: SELECT * FROM users WHERE email = email LIMIT 1;
 
             if (user != default(User)) {
                 return Json(new jsonResponse { success = false, errMsg = "Email already in use" } );
@@ -68,15 +70,16 @@ namespace sample_app.Controllers {
             newUser.passHashSize = Convert.ToInt32(configuration["passHashSize"]);
             newUser.passSaltSize = Convert.ToInt32(configuration["passSaltSize"]);
 
-            newUser.passwordSalt = auth.generateSalt(newUser.passSaltSize);
-            newUser.passwordHash = auth.hashPassword(password, newUser.passwordSalt, newUser.passHashIterations, newUser.passHashSize);
+            newUser.passwordSalt = AuthService.generateSalt(newUser.passSaltSize);
+            newUser.passwordHash = AuthService.hashPassword(password, newUser.passwordSalt, newUser.passHashIterations, newUser.passHashSize);
 
             _context.users.Add(newUser);
+            // equivalent SQL: INSERT INTO users VALUES (NULL,email,hashedPassword,passSalt,passSize,passIterations,saltSize,0);
             _context.SaveChanges();
 
             newUser = await _context.users.FirstOrDefaultAsync(u => u.email == email);
 
-            var userToken = auth.generateJWT(newUser.id);
+            var userToken = AuthService.generateJWT(newUser, configuration["JwtSecretKey"], configuration["JwtExpiry"]); // get a JWT token for authentication
 
             return Json(new jsonResponse {success = true, token = userToken}) ;
         }

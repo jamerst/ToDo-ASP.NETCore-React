@@ -8,13 +8,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.Extensions.Configuration;
 
+using sample_app.Models;
+
 namespace sample_app.Services {
     public class AuthService {
-        private IConfiguration configuration;
-
-        public AuthService(IConfiguration configuration) {
-            this.configuration = configuration;
-        }
 
         public static int getCurrentUser(IHttpContextAccessor context) {
             var stringId = context?.HttpContext?.User?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
@@ -23,7 +20,7 @@ namespace sample_app.Services {
             return userId;
         }
 
-        public string hashPassword(string password, string salt, int iterations, int size) {
+        public static string hashPassword(string password, string salt, int iterations, int size) {
             return Convert.ToBase64String(KeyDerivation.Pbkdf2(
                 password: password,
                 salt: Convert.FromBase64String(salt),
@@ -32,7 +29,7 @@ namespace sample_app.Services {
                 numBytesRequested: size / 8));
         }
 
-        public string generateSalt(int size) {
+        public static string generateSalt(int size) {
             byte[] salt = new byte[size / 8];
             using (var RNG = RandomNumberGenerator.Create()) {
                 RNG.GetBytes(salt);
@@ -41,14 +38,15 @@ namespace sample_app.Services {
             return Convert.ToBase64String(salt);
         }
 
-        public string generateJWT(int id) {
+        public static string generateJWT(User user, string secret, string expiry) {
             var handler = new JwtSecurityTokenHandler();
             var descriptor = new SecurityTokenDescriptor {
                 Subject = new ClaimsIdentity(new Claim[] {
-                    new Claim(JwtRegisteredClaimNames.Jti, id.ToString())
+                    new Claim(JwtRegisteredClaimNames.Jti, user.id.ToString()),
+                    new Claim(ClaimTypes.Role, user.admin ? "Admin" : "User")
                 }),
-                Expires = DateTime.UtcNow.AddSeconds(Convert.ToInt32(configuration["JwtExpiry"])),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtSecretKey"])), SecurityAlgorithms.HmacSha256Signature)
+                Expires = DateTime.UtcNow.AddSeconds(Convert.ToInt32(expiry)),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)), SecurityAlgorithms.HmacSha256Signature)
             };
 
             var token = handler.CreateToken(descriptor);

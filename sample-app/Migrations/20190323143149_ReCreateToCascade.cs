@@ -2,7 +2,7 @@
 
 namespace sample_app.Migrations
 {
-    public partial class InitialCreate : Migration
+    public partial class ReCreateToCascade : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -13,7 +13,12 @@ namespace sample_app.Migrations
                     id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     email = table.Column<string>(nullable: true),
-                    passwordHash = table.Column<string>(nullable: true)
+                    passwordHash = table.Column<string>(nullable: true),
+                    passwordSalt = table.Column<string>(nullable: true),
+                    passHashSize = table.Column<int>(nullable: false),
+                    passHashIterations = table.Column<int>(nullable: false),
+                    passSaltSize = table.Column<int>(nullable: false),
+                    admin = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -27,17 +32,17 @@ namespace sample_app.Migrations
                     id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     name = table.Column<string>(nullable: true),
-                    Userid = table.Column<int>(nullable: true)
+                    userid = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_lists", x => x.id);
                     table.ForeignKey(
-                        name: "FK_lists_users_Userid",
-                        column: x => x.Userid,
+                        name: "FK_lists_users_userid",
+                        column: x => x.userid,
                         principalTable: "users",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -48,28 +53,28 @@ namespace sample_app.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     text = table.Column<string>(nullable: true),
                     complete = table.Column<bool>(nullable: false),
-                    ToDoListid = table.Column<int>(nullable: true)
+                    listid = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_items", x => x.id);
                     table.ForeignKey(
-                        name: "FK_items_lists_ToDoListid",
-                        column: x => x.ToDoListid,
+                        name: "FK_items_lists_listid",
+                        column: x => x.listid,
                         principalTable: "lists",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_items_ToDoListid",
+                name: "IX_items_listid",
                 table: "items",
-                column: "ToDoListid");
+                column: "listid");
 
             migrationBuilder.CreateIndex(
-                name: "IX_lists_Userid",
+                name: "IX_lists_userid",
                 table: "lists",
-                column: "Userid");
+                column: "userid");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
