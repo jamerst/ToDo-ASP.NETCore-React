@@ -20,6 +20,8 @@ Tested on Linux, should run on Windows and MacOS, but this hasn't been tested fu
 ### Authentication
 Authentication is provided using JWT tokens. To obtain a token, `POST /api/auth/login` with `email` and `password`. This token should be provided as a bearer in the Authorization HTTP header of any requests made. These tokens are valid for 24 hours (configurable).
 
+The database is pre-populated with two accounts: test@test.com and admin@test.com, the latter of which is designated as an admin user. The password for both accounts is "password".
+
 ### Back-End Configuration
 A full CRUD interface exists for managing data in the system, but there is no user interface for this. Only users designated as admin with a boolean flag can access it. A JWT token with this flag set is required. The available endpoints are as follows:
 #### Create
